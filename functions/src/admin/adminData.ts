@@ -4,6 +4,11 @@ import { getFirestore } from '../lib/firebase';
 
 const db = getFirestore();
 
+const adminCallable = functions
+  .region('us-central1')
+  .runWith({ serviceAccount: 'freepa-76b26@appspot.gserviceaccount.com' })
+  .https.onCall;
+
 function requirePlatformAdmin(context: functions.https.CallableContext) {
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required.');
@@ -59,7 +64,7 @@ function toIso(value: Timestamp | Date | string | undefined | null): string | un
   return date.toISOString();
 }
 
-export const adminGetStats = functions.https.onCall(async (_data, context) => {
+export const adminGetStats = adminCallable(async (_data, context) => {
   requirePlatformAdmin(context);
 
   try {
@@ -103,7 +108,7 @@ export const adminGetStats = functions.https.onCall(async (_data, context) => {
   }
 });
 
-export const adminListOrganizations = functions.https.onCall(async (_data, context) => {
+export const adminListOrganizations = adminCallable(async (_data, context) => {
   requirePlatformAdmin(context);
 
   const organizationsSnap = await db.collection('organizations').get();
@@ -133,7 +138,7 @@ export const adminListOrganizations = functions.https.onCall(async (_data, conte
   return results;
 });
 
-export const adminListUsers = functions.https.onCall(async (_data, context) => {
+export const adminListUsers = adminCallable(async (_data, context) => {
   requirePlatformAdmin(context);
 
   const snapshot = await db.collection('users').get();
@@ -158,7 +163,7 @@ export const adminListUsers = functions.https.onCall(async (_data, context) => {
   });
 });
 
-export const adminListInvoices = functions.https.onCall(async (data, context) => {
+export const adminListInvoices = adminCallable(async (data, context) => {
   requirePlatformAdmin(context);
 
   const limitCount = typeof data?.limit === 'number' ? Math.min(Math.max(data.limit, 1), 100) : 25;
@@ -210,7 +215,7 @@ export const adminListInvoices = functions.https.onCall(async (data, context) =>
   return invoices.slice(0, limitCount);
 });
 
-export const adminListPayments = functions.https.onCall(async (data, context) => {
+export const adminListPayments = adminCallable(async (data, context) => {
   requirePlatformAdmin(context);
 
   const limitCount = typeof data?.limit === 'number' ? Math.min(Math.max(data.limit, 1), 100) : 25;
