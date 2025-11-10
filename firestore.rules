@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isPlatformAdmin() {
+      return isSignedIn() && request.auth.token.platformAdmin == true;
+    }
+
+    function hasOrgAccess(orgId) {
+      return isSignedIn()
+        && request.auth.token.organizations != null
+        && orgId in request.auth.token.organizations;
+    }
+
+    function hasRole(orgId, allowedRoles) {
+      return isSignedIn()
+        && request.auth.token.orgRoles != null
+        && request.auth.token.orgRoles[orgId] != null
+        && allowedRoles.hasAny([request.auth.token.orgRoles[orgId]]);
+    }
+
+    match /organizations/{orgId} {
+      allow read: if hasOrgAccess(orgId) || isPlatformAdmin();
+      allow write: if hasRole(orgId, ['owner', 'admin']) || isPlatformAdmin();
+    }
+
+    match /organizations/{orgId}/{collection}/{docId} {
+      allow read: if hasOrgAccess(orgId) || isPlatformAdmin();
+
+      allow write: if hasRole(orgId, ['owner', 'admin']) || isPlatformAdmin() ||
+        (collection == 'users' && hasRole(orgId, ['owner', 'admin'])) ||
+        (collection == 'clients' && hasRole(orgId, ['owner', 'admin', 'manager', 'editor'])) ||
+        (collection == 'invoices' && hasRole(orgId, ['owner', 'admin', 'manager', 'editor'])) ||
+        (collection == 'payments' && hasRole(orgId, ['owner', 'admin', 'manager', 'finance']));
+    }
+
+    match /users/{userId} {
+      allow read: if (isSignedIn() && request.auth.uid == userId) || isPlatformAdmin();
+      allow write: if isPlatformAdmin();
+    }
+
+    match /auditEvents/{docId} {
+      allow read: if isPlatformAdmin();
+      allow write: if isPlatformAdmin();
+    }
+  }
+}
+

@@ -1,0 +1,31 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isPlatformAdmin() {
+      return isSignedIn() && request.auth.token.platformAdmin == true;
+    }
+
+    function hasOrg(orgId) {
+      return isSignedIn()
+        && request.auth.token.organizations != null
+        && orgId in request.auth.token.organizations;
+    }
+
+    function hasRole(orgId, roles) {
+      return hasOrg(orgId)
+        && request.auth.token.orgRoles != null
+        && request.auth.token.orgRoles[orgId] != null
+        && roles.hasAny([request.auth.token.orgRoles[orgId]]);
+    }
+
+    match /organizations/{orgId}/{allPaths=**} {
+      allow read: if hasOrg(orgId) || isPlatformAdmin();
+      allow write: if hasRole(orgId, ['owner', 'admin', 'editor']) || isPlatformAdmin();
+    }
+  }
+}
+
