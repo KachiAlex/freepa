@@ -82,10 +82,6 @@ export function AuthProvider({ children }: PropsWithChildren) {
           }
         }
 
-        if (resolvedOrganizations.length === 0) {
-          resolvedOrganizations = ['org-demo'];
-        }
-
         setOrganizations(resolvedOrganizations);
         setOrgRoles(resolvedRoles);
         setActiveOrgId((current) => {
@@ -97,9 +93,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setIsPlatformAdmin(platformAdminClaim);
       } catch (error) {
         console.error('Failed to hydrate authentication context', error);
-        setOrganizations((prev) => (prev.length ? prev : ['org-demo']));
+        setOrganizations((prev) => (prev.length ? prev : []));
         setOrgRoles({});
-        setActiveOrgId((current) => current ?? 'org-demo');
+        setActiveOrgId(null);
         setIsPlatformAdmin(false);
       } finally {
         setLoading(false);
