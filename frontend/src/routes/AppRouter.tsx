@@ -1,23 +1,25 @@
+import { lazy } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import ProtectedRoute from './ProtectedRoute'
 import AdminRoute from './AdminRoute'
-import DashboardLayout from '../layouts/DashboardLayout'
-import DashboardPage from '../pages/dashboard/DashboardPage'
-import InvoiceListPage from '../pages/invoices/InvoiceListPage'
-import InvoiceEditorPage from '../pages/invoices/InvoiceEditorPage'
-import PaymentsPage from '../pages/payments/PaymentsPage'
-import ClientsPage from '../pages/clients/ClientsPage'
-import SettingsPage from '../pages/settings/SettingsPage'
-import SignInPage from '../pages/auth/SignInPage'
-import SignUpPage from '../pages/auth/SignUpPage'
-import HomePage from '../pages/home/HomePage'
-import AdminLayout from '../layouts/AdminLayout'
-import AdminOverviewPage from '../pages/admin/AdminOverviewPage'
-import AdminUsersPage from '../pages/admin/AdminUsersPage'
-import AdminOrganizationsPage from '../pages/admin/AdminOrganizationsPage'
-import AdminInvoicesPage from '../pages/admin/AdminInvoicesPage'
-import AdminPaymentsPage from '../pages/admin/AdminPaymentsPage'
-import AdminLoginPage from '../pages/admin/AdminLoginPage'
+
+const DashboardLayout = lazy(() => import('../layouts/DashboardLayout'))
+const DashboardPage = lazy(() => import('../pages/dashboard/DashboardPage'))
+const InvoiceListPage = lazy(() => import('../pages/invoices/InvoiceListPage'))
+const InvoiceEditorPage = lazy(() => import('../pages/invoices/InvoiceEditorPage'))
+const PaymentsPage = lazy(() => import('../pages/payments/PaymentsPage'))
+const ClientsPage = lazy(() => import('../pages/clients/ClientsPage'))
+const SettingsPage = lazy(() => import('../pages/settings/SettingsPage'))
+const SignInPage = lazy(() => import('../pages/auth/SignInPage'))
+const SignUpPage = lazy(() => import('../pages/auth/SignUpPage'))
+const HomePage = lazy(() => import('../pages/home/HomePage'))
+const AdminLayout = lazy(() => import('../layouts/AdminLayout'))
+const AdminOverviewPage = lazy(() => import('../pages/admin/AdminOverviewPage'))
+const AdminUsersPage = lazy(() => import('../pages/admin/AdminUsersPage'))
+const AdminOrganizationsPage = lazy(() => import('../pages/admin/AdminOrganizationsPage'))
+const AdminInvoicesPage = lazy(() => import('../pages/admin/AdminInvoicesPage'))
+const AdminPaymentsPage = lazy(() => import('../pages/admin/AdminPaymentsPage'))
+const AdminLoginPage = lazy(() => import('../pages/admin/AdminLoginPage'))
 
 function AppRouter() {
   return (

@@ -915,6 +915,15 @@ textarea {
   color: #475569;
 }
 
+.app-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  font-size: 1rem;
+  color: #6b7280;
+}
+
 .loading-state,
 .error-state {
   min-height: 240px;
