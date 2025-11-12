@@ -4,6 +4,24 @@ import { verifyPayment } from '../services/paymentProviders';
 
 const db = getFirestore();
 
+function resolveProviderStatus(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  const record = payload as Record<string, unknown>;
+  const directStatus = typeof record.status === 'string' ? record.status : null;
+  const nestedStatus =
+    record.data && typeof record.data === 'object'
+      ? (() => {
+          const nested = record.data as Record<string, unknown>;
+          return typeof nested.status === 'string' ? nested.status : null;
+        })()
+      : null;
+
+  return nestedStatus ?? directStatus;
+}
+
 export const reconcilePayments = functions.pubsub.schedule('every 6 hours').onRun(async () => {
   const pendingPayments = await db
     .collectionGroup('invoices')
@@ -18,10 +36,7 @@ export const reconcilePayments = functions.pubsub.schedule('every 6 hours').onRu
     }
 
     const response = await verifyPayment(data.payment.provider, data.payment.reference);
-    const status =
-      data.payment.provider === 'flutterwave'
-        ? (response as any)?.data?.status
-        : (response as any)?.data?.status;
+    const status = resolveProviderStatus(response);
 
     if (status && ['successful', 'success'].includes(status)) {
       await doc.ref.set(

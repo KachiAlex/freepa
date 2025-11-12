@@ -57,6 +57,40 @@ type AdminPayment = {
   raw?: unknown;
 };
 
+type FirestorePaymentRecord = {
+  provider?: string;
+  reference?: string;
+  amount?: unknown;
+  createdAt?: Timestamp | string;
+  updatedAt?: Timestamp | string;
+  settledAt?: Timestamp | string;
+  raw?: unknown;
+  id?: string;
+};
+
+type FirestoreInvoiceRecord = {
+  number?: string;
+  clientId?: string;
+  clientName?: string;
+  status?: string;
+  issueDate?: string | Timestamp;
+  dueDate?: string | Timestamp;
+  totals?: unknown;
+  currency?: string;
+  subtotal?: unknown;
+  taxTotal?: unknown;
+  total?: unknown;
+  paymentIntentUrl?: string;
+  metadata?: Record<string, unknown>;
+  pdfStatus?: string;
+  pdfUrl?: string;
+  sentAt?: string | Timestamp;
+  voidedAt?: string | Timestamp;
+  createdAt?: string | Timestamp;
+  updatedAt?: string | Timestamp;
+  payment?: FirestorePaymentRecord;
+};
+
 function toIso(value: Timestamp | Date | string | undefined | null): string | undefined {
   if (!value) return undefined;
   if (typeof value === 'string') return value;
@@ -179,7 +213,7 @@ export const adminListInvoices = adminCallable(async (data, context) => {
   invoiceSnapshots.forEach((snapshot, index) => {
     const orgId = organizationsSnap.docs[index].id;
     snapshot.docs.forEach((doc) => {
-      const data = doc.data() as Record<string, any>;
+      const data = doc.data() as FirestoreInvoiceRecord;
       invoices.push({
         id: doc.id,
         organizationId: orgId,
@@ -187,8 +221,8 @@ export const adminListInvoices = adminCallable(async (data, context) => {
         clientId: data.clientId,
         clientName: data.clientName,
         status: data.status,
-        issueDate: data.issueDate,
-        dueDate: data.dueDate,
+        issueDate: toIso(data.issueDate),
+        dueDate: toIso(data.dueDate),
         totals: data.totals,
         currency: data.currency,
         subtotal: data.subtotal,
@@ -231,8 +265,8 @@ export const adminListPayments = adminCallable(async (data, context) => {
   invoiceSnapshots.forEach((snapshot, index) => {
     const orgId = organizationsSnap.docs[index].id;
     snapshot.docs.forEach((doc) => {
-      const invoiceData = doc.data() as Record<string, any>;
-      const paymentData = invoiceData.payment as Record<string, any> | undefined;
+      const invoiceData = doc.data() as FirestoreInvoiceRecord;
+      const paymentData = invoiceData.payment;
       if (!paymentData) return;
 
       payments.push({

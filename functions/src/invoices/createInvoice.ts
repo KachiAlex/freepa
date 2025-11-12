@@ -25,8 +25,6 @@ const invoiceSchema = z.object({
   metadata: z.record(z.string(), z.any()).optional(),
 });
 
-type InvoiceInput = z.infer<typeof invoiceSchema>;
-
 const db = getFirestore();
 
 export const createInvoice = functions.https.onCall(async (data, context) => {

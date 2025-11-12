@@ -193,7 +193,7 @@ export async function saveInvoice(payload: Partial<Invoice> & { organizationId: 
         currency,
         dueDate: payload.dueDate,
         issueDate: payload.issueDate,
-        lineItems: normalizedLineItems.map(({ total, ...item }) => item),
+        lineItems: normalizedLineItems.map(({ total: _total, ...rest }) => rest),
         notes: payload.notes,
         metadata: payload.metadata,
       });
@@ -214,7 +214,7 @@ export async function saveInvoice(payload: Partial<Invoice> & { organizationId: 
       await updateInvoice({
         organizationId,
         invoiceId: payload.id,
-        lineItems: normalizedLineItems.map(({ total, ...item }) => item),
+        lineItems: normalizedLineItems.map(({ total: _total, ...rest }) => rest),
         notes: payload.notes,
         status: payload.status,
         metadata: payload.metadata,

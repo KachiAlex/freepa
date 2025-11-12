@@ -1,3 +1,10 @@
+import { setGlobalOptions } from 'firebase-functions/v2';
+
+setGlobalOptions({
+  region: 'us-central1',
+  serviceAccount: 'freepa-76b26@appspot.gserviceaccount.com',
+});
+
 export * from './invoices/createInvoice';
 export * from './invoices/updateInvoice';
 export * from './invoices/requestInvoicePdf';

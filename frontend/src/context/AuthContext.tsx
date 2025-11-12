@@ -5,6 +5,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useCallback,
 } from 'react';
 import type { User } from 'firebase/auth';
 import {
@@ -31,6 +32,7 @@ type AuthContextValue = {
   activeOrgId: string | null;
   setActiveOrgId: (organizationId: string) => void;
   isPlatformAdmin: boolean;
+  refreshMembership: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -45,19 +47,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
   const auth = useMemo(() => getAuthInstance(), []);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
-      setUser(nextUser);
-
-      if (!nextUser) {
-        setOrganizations([]);
-        setOrgRoles({});
-        setActiveOrgId(null);
-        setIsPlatformAdmin(false);
-        setLoading(false);
-        return;
-      }
-
+  const hydrateMembership = useCallback(
+    async (nextUser: User) => {
       setLoading(true);
 
       try {
@@ -97,7 +88,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
         setOrganizations(resolvedOrganizations);
         setOrgRoles(resolvedRoles);
-        setActiveOrgId((current) => current ?? resolvedOrganizations[0] ?? null);
+        setActiveOrgId((current) => {
+          if (current && resolvedOrganizations.includes(current)) {
+            return current;
+          }
+          return resolvedOrganizations[0] ?? null;
+        });
         setIsPlatformAdmin(platformAdminClaim);
       } catch (error) {
         console.error('Failed to hydrate authentication context', error);
@@ -108,10 +104,28 @@ export function AuthProvider({ children }: PropsWithChildren) {
       } finally {
         setLoading(false);
       }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
+      setUser(nextUser);
+
+      if (!nextUser) {
+        setOrganizations([]);
+        setOrgRoles({});
+        setActiveOrgId(null);
+        setIsPlatformAdmin(false);
+        setLoading(false);
+        return;
+      }
+
+      await hydrateMembership(nextUser);
     });
 
     return unsubscribe;
-  }, [auth]);
+  }, [auth, hydrateMembership]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -140,13 +154,21 @@ export function AuthProvider({ children }: PropsWithChildren) {
         setActiveOrgId(organizationId);
       },
       isPlatformAdmin,
+      async refreshMembership() {
+        if (!auth.currentUser) {
+          return;
+        }
+        await auth.currentUser.getIdToken(true);
+        await hydrateMembership(auth.currentUser);
+      },
     }),
-    [activeOrgId, auth, isPlatformAdmin, loading, orgRoles, organizations, user],
+    [activeOrgId, auth, hydrateMembership, isPlatformAdmin, loading, orgRoles, organizations, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {
@@ -155,8 +177,9 @@ export function useAuth() {
   return context;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTenant() {
   const context = useAuth();
-  const { organizations, activeOrgId, setActiveOrgId, loading, orgRoles, isPlatformAdmin } = context;
-  return { organizations, activeOrgId, setActiveOrgId, loading, orgRoles, isPlatformAdmin };
+  const { organizations, activeOrgId, setActiveOrgId, loading, orgRoles, isPlatformAdmin, refreshMembership } = context;
+  return { organizations, activeOrgId, setActiveOrgId, loading, orgRoles, isPlatformAdmin, refreshMembership };
 }

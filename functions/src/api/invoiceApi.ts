@@ -102,6 +102,38 @@ function getActorContext(req: express.Request) {
 const app = express();
 app.use(cors({ origin: true }));
 app.use(express.json());
+
+function resolvePaymentLink(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') {
+    return null;
+  }
+
+  const record = payload as Record<string, unknown>;
+  const data =
+    record.data && typeof record.data === 'object'
+      ? (record.data as Record<string, unknown>)
+      : undefined;
+  const nested =
+    data?.data && typeof data.data === 'object'
+      ? (data.data as Record<string, unknown>)
+      : undefined;
+
+  const candidates: unknown[] = [
+    data?.link,
+    data?.authorization_url,
+    nested?.authorization_url,
+    record.link,
+    record.authorization_url,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.length > 0) {
+      return candidate;
+    }
+  }
+
+  return null;
+}
 app.use(authenticateAdmin);
 
 app.post('/invoices', async (req, res) => {
@@ -283,14 +315,7 @@ app.post('/invoices/:organizationId/:invoiceId/payment-intent', async (req, res)
       },
     });
 
-    const responseData = response as Record<string, any>;
-    const link =
-      responseData?.data?.link ??
-      responseData?.data?.authorization_url ??
-      responseData?.data?.data?.authorization_url ??
-      responseData?.link ??
-      responseData?.authorization_url ??
-      null;
+    const link = resolvePaymentLink(response);
 
     await invoiceSnap.ref.set(
       {

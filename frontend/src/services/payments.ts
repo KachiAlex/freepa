@@ -1,3 +1,26 @@
+function resolvePaymentUrl(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object') {
+    return null
+  }
+
+  const record = payload as Record<string, unknown>
+  const data = record.data && typeof record.data === 'object' ? (record.data as Record<string, unknown>) : undefined
+
+  const candidates: unknown[] = [
+    data?.link,
+    data?.authorization_url,
+    data?.redirect_url,
+    record.link,
+  ]
+
+  for (const candidate of candidates) {
+    if (typeof candidate === 'string' && candidate.length > 0) {
+      return candidate
+    }
+  }
+
+  return null
+}
 import { collection, getDocs, Timestamp } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { mockPayments, mockInvoices } from '../mocks/data';
@@ -101,13 +124,7 @@ export async function createPaymentIntent(params: {
     },
   });
 
-  const payload = response.data as Record<string, any>;
-  const paymentUrl =
-    payload?.data?.link ??
-    payload?.data?.authorization_url ??
-    payload?.data?.redirect_url ??
-    payload?.link ??
-    null;
+  const paymentUrl = resolvePaymentUrl(response.data);
 
   if (paymentUrl) {
     const updateInvoice = httpsCallable(functions, 'updateInvoice');
