@@ -1,0 +1,14 @@
+node_modules/
+frontend/node_modules/
+server/node_modules/
+frontend/dist/
+server/dist/
+.env
+.env.*
+*.local
+server/uploads/
+uploads/
+service-account.json
+secrets.txt
+firebase-legacy/
+*.tar.gz
